@@ -1,0 +1,141 @@
+//! > Incompatible types in if blocks.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let x = 7_felt252;
+    if x {
+        true
+    } else {
+        0
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Condition has type "core::felt252", expected bool.
+ --> lib.cairo:3:8
+    if x {
+       ^
+
+error: Unexpected return type. Expected: "()", found: "core::bool".
+ --> lib.cairo:1:10
+fn foo() {
+         ^
+
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+ --> lib.cairo:6:9
+        0
+        ^
+
+//! > ==========================================================================
+
+//! > Single sided if.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> bool {
+    let x = 7_u64;
+    if x {
+        return true;
+    } else {}
+    false
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Condition has type "core::integer::u64", expected bool.
+ --> lib.cairo:3:8
+    if x {
+       ^
+
+//! > ==========================================================================
+
+//! > if_let.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> bool {
+    let x = Option::Some(7_u64);
+    if let MyEnum::A(y) = x {
+        return y == 9;
+    } else {
+        return false;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+}
+
+//! > expected_diagnostics
+error: Wrong enum in pattern. Expected: "core::option::Option". Got: "test::MyEnum".
+ --> lib.cairo:6:12
+    if let MyEnum::A(y) = x {
+           ^**********^
+
+error: Identifier not found.
+ --> lib.cairo:7:16
+        return y == 9;
+               ^
+
+//! > ==========================================================================
+
+//! > if_let logical operators.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> bool {
+    let x = Option::Some(7_u64);
+    if let Some(y) = x || true {
+        return y == 9;
+    } else {
+        return false;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Expected type "core::bool", found: "core::option::Option::<core::integer::u64>".
+ --> lib.cairo:3:22
+    if let Some(y) = x || true {
+                     ^
+
+error: Logical operator not allowed in if-let.
+ --> lib.cairo:3:22
+    if let Some(y) = x || true {
+                     ^*******^
+
+error: Identifier not found.
+ --> lib.cairo:3:12
+    if let Some(y) = x || true {
+           ^**^
+
+error: Identifier not found.
+ --> lib.cairo:4:16
+        return y == 9;
+               ^
