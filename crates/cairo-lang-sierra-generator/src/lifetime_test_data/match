@@ -1,0 +1,253 @@
+//! > Last use in one branch
+
+//! > test_runner_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt252, y: felt252) -> felt252 {
+    if x == 0 { y } else { 0 }
+}
+
+//! > module_code
+
+//! > lowering_format
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v15) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Statements:
+  (v10: core::felt252) <- 0u
+End:
+  Return(v10)
+
+//! > last_use
+v10: ((BlockId(2), 1), 0)
+v1: ((BlockId(1), 0), 0)
+v0: ((BlockId(0), 0), 0)
+
+//! > drops
+BeginningOfBlock(BlockId(2)): v15, v1
+
+//! > ==========================================================================
+
+//! > Last use after branch
+
+//! > test_runner_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt252, y: felt252) -> felt252 {
+    let _z = if x == 0 { y } else { 0 };
+    y
+}
+
+//! > module_code
+
+//! > lowering_format
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v15) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Statements:
+End:
+  Return(v1)
+
+//! > last_use
+v1: ((BlockId(2), 0), 0)
+v1: ((BlockId(1), 0), 0)
+v0: ((BlockId(0), 0), 0)
+
+//! > drops
+BeginningOfBlock(BlockId(2)): v15
+
+//! > ==========================================================================
+
+//! > Last use in both branches
+
+//! > test_runner_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt252, y: felt252) {
+    let _z = if x == 0 { y } else { y + 3 };
+}
+
+//! > module_code
+
+//! > lowering_format
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v17) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  (v10: core::felt252) <- 3u
+  (v23: core::felt252) <- core::felt252_add(v1, v10)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v13: ()) <- struct_construct()
+End:
+  Return(v13)
+
+//! > last_use
+v13: ((BlockId(3), 1), 0)
+v10: ((BlockId(2), 1), 1)
+v1: ((BlockId(2), 1), 0)
+v0: ((BlockId(0), 0), 0)
+
+//! > drops
+PostStatement((BlockId(2), 1)): v23
+BeginningOfBlock(BlockId(2)): v17
+BeginningOfBlock(BlockId(1)): v1
+
+//! > ==========================================================================
+
+//! > Nested ifs
+
+//! > test_runner_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt252, y: felt252) {
+    let _z = if x == 0 {
+        y
+    } else {
+        if x == 1 {
+            if x == y {
+                y
+            } else {
+                1234
+            }
+        } else {
+            1000
+        }
+    };
+}
+
+//! > module_code
+
+//! > lowering_format
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v38) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk9, {})
+
+blk2:
+Statements:
+  (v12: core::felt252) <- 1u
+  (v63: core::felt252) <- core::felt252_sub(v0, v12)
+End:
+  Match(match core::felt252_is_zero(v63) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v47) => blk7,
+  })
+
+blk3:
+Statements:
+  (v64: core::felt252) <- core::felt252_sub(v0, v1)
+End:
+  Match(match core::felt252_is_zero(v64) {
+    IsZeroResult::Zero => blk4,
+    IsZeroResult::NonZero(v56) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Statements:
+End:
+  Goto(blk9, {})
+
+blk9:
+Statements:
+  (v34: ()) <- struct_construct()
+End:
+  Return(v34)
+
+//! > last_use
+v34: ((BlockId(9), 1), 0)
+v64: ((BlockId(3), 1), 0)
+v1: ((BlockId(3), 0), 1)
+v0: ((BlockId(3), 0), 0)
+v63: ((BlockId(2), 2), 0)
+v12: ((BlockId(2), 1), 1)
+
+//! > drops
+BeginningOfBlock(BlockId(5)): v56
+BeginningOfBlock(BlockId(7)): v47, v1, v0
+BeginningOfBlock(BlockId(2)): v38
+BeginningOfBlock(BlockId(1)): v1, v0
